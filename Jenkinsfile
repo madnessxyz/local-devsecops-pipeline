@@ -20,10 +20,14 @@ pipeline {
             }
         }
 
-        stage('🛡️ SonarQube Code Quality Scan') {
+	        stage('🛡️ SonarQube Code Quality Scan') {
             steps {
                 echo 'Initiating deep SecOps source code vulnerabilities scan...'
-                // Code analysis commands will go here in the next step
+		withSonarQubeENV('sonar-server') {
+	            sh "${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=Wanderlust-3Tier \
+                    -Dsonar.projectName=Wanderlust-3Tier \
+                    -Dsonar.sources=."
             }
         }
     }
