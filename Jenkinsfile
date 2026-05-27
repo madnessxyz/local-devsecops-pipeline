@@ -55,7 +55,7 @@ pipeline {
                 // Using the built-in credentials engine to grab your SSH key file directly
                 withCredentials([sshUserPrivateKey(credentialsId: 'build-agent', keyFileVariable: 'SSH_KEY')]) {
                     sh """
-                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no jenkins@${HOST_IP} '
+                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no madness@${HOST_IP} '
                             cd ~/DevOps-Projects/DevOps-Project-39/wanderlust-3tier-project && \
                             docker compose down && \
                             docker compose up -d --build
