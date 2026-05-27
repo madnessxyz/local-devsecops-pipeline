@@ -2,7 +2,8 @@ pipeline {
     agent { label 'agent' } // Instructs the Master to run this entire pipeline on our isolated runner node!
 
     environment {
-        SCANNER_HOME = tool 'sonar-scanner' // Maps our automated SonarQube quality analysis engine from global tools
+        SCANNER_HOME = tool 'sonar-scanner' // Maps our automated SonarQube quality analysis engine
+        HOST_IP = '192.168.1.173'
     }
 
     stages {
@@ -35,7 +36,6 @@ pipeline {
         stage('🐳 Build Container Images') {
             steps {
                 echo 'Compiling multi-tier application using hardened optimized Dockerfiles...'
-                // Build backend and frontend images using their respective optimized multi-stage files
                 sh 'docker build -t wanderlust-backend:latest -f ./backend/Dockerfile_optimized ./backend'
                 sh 'docker build -t wanderlust-frontend:latest -f ./frontend/Dockerfile_optimized ./frontend'
             }
@@ -44,7 +44,6 @@ pipeline {
         stage('🏴‍☠️ Trivy Image Vulnerability Scan') {
             steps {
                 echo 'Unleashing Trivy container vulnerability sweep...'
-                // Run Trivy via Docker container to scan our freshly built local images
                 sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache:/root/.cache aquasec/trivy:latest image --severity CRITICAL wanderlust-backend:latest'
                 sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache:/root/.cache aquasec/trivy:latest image --severity CRITICAL wanderlust-frontend:latest'
             }
@@ -52,11 +51,18 @@ pipeline {
 
         stage('🚀 Local Deployment') {
             steps {
-                echo 'Deploying verified application stack via Docker Compose...'
-                // Tear down any existing instances and stand up the newly built, network-isolated containers
-                sh 'docker-compose down'
-                sh 'docker-compose up -d --build'
-                echo 'Application is live and running on production ports!'
+                echo 'Deploying verified application stack directly via Host Docker Engine...'
+                // Using Jenkins credentials provider to safely SSH onto the host and run modern compose commands
+                sshagent(credentials: ['build-agent']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no jenkins@${HOST_IP} '
+                            cd ~/DevOps-Projects/DevOps-Project-39/wanderlust-3tier-project && \
+                            docker compose down && \
+                            docker compose up -d --build
+                        '
+                    """
+                }
+                echo 'Application is live and running on production host ports!'
             }
         }
     }
