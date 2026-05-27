@@ -58,4 +58,4 @@ USER appuser
 EXPOSE 5000
 
 # Use exec form of CMD for proper signal handling
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
