@@ -54,8 +54,8 @@ pipeline {
             steps {
                 echo 'Deploying verified application stack via Docker Compose...'
                 // Tear down any existing instances and stand up the newly built, network-isolated containers
-                sh 'docker compose down'
-                sh 'docker compose up -d --build'
+                sh 'docker-compose down'
+                sh 'docker-compose up -d --build'
                 echo 'Application is live and running on production ports!'
             }
         }
