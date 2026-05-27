@@ -1,49 +1,17 @@
-# -------- Stage 1: Dependencies --------
-FROM node:21-alpine AS deps
-WORKDIR /app
-
-# Copy package files for dependency installation
-COPY package*.json ./
-
-# Install all dependencies (including dev dependencies needed for build)
-#RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
-RUN npm ci --no-audit --prefer-offline --no-fund || npm install --no-audit --prefer-offline --no-fund
+# Stage 1: Build environment
 FROM node:21-alpine AS builder
 WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# -------- Stage 3: Runtime (minimal) --------
-FROM node:21-alpine AS runtime
-WORKDIR /app
+# Stage 2: Highly optimized production server using Nginx
+FROM nginx:alpine
+# Copy the compiled static web files from the builder stage straight into the Nginx public folder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Install only production dependencies for serving
-COPY package*.json ./
-#RUN npm ci --only=production --prefer-offline --no-audit || npm install --only=production --prefer-offline --no-audit \
-#    && npm cache clean --force
-RUN timeout 600 npm ci --omit=dev --prefer-offline --no-audit --maxsockets 3 || \
-    timeout 600 npm install --omit=dev --prefer-offline --no-audit --maxsockets 3 || \
-    npm install --omit=dev --force
+EXPOSE 80
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Create non-root user
-RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
-
-# Expose the app port
-EXPOSE 4173
-
-# Run the preview server (for production builds)
-CMD ["npm", "run", "preview", "--", "--host"]
-
+# Overwrite default Nginx configuration execution to keep it running smoothly in the foreground
+CMD ["nginx", "-g", "daemon off;"]

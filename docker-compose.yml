@@ -34,7 +34,7 @@ services:
     environment:
       - VITE_API_PATH=http://192.168.1.173:5000 # <-- Updated to match your host server IP
     ports:
-      - "5173:5173"
+      - "5173:80"
     networks:
       - app_network
 
