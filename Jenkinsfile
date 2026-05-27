@@ -52,10 +52,10 @@ pipeline {
         stage('🚀 Local Deployment') {
             steps {
                 echo 'Deploying verified application stack directly via Host Docker Engine...'
-                // Using Jenkins credentials provider to safely SSH onto the host and run modern compose commands
-                sshagent(credentials: ['build-agent']) {
+                // Using the built-in credentials engine to grab your SSH key file directly
+                withCredentials([sshUserPrivateKey(credentialsId: 'build-agent', keyFileVariable: 'SSH_KEY')]) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no jenkins@${HOST_IP} '
+                        ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no jenkins@${HOST_IP} '
                             cd ~/DevOps-Projects/DevOps-Project-39/wanderlust-3tier-project && \
                             docker compose down && \
                             docker compose up -d --build
