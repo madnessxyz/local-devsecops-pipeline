@@ -1,8 +1,8 @@
 pipeline {
-    agent { label 'agent' } // Instructs the Master to run this entire pipeline on our isolated runner!
+    agent { label 'agent' } // Instructs the Master to run this entire pipeline on our isolated runner node!
 
     environment {
-        SCANNER_HOME = tool 'sonar-scanner' // Maps our automated SonarQube quality analysis engine
+        SCANNER_HOME = tool 'sonar-scanner' // Maps our automated SonarQube quality analysis engine from global tools
     }
 
     stages {
@@ -47,6 +47,16 @@ pipeline {
                 // Run Trivy via Docker container to scan our freshly built local images
                 sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache:/root/.cache aquasec/trivy:latest image --severity CRITICAL wanderlust-backend:latest'
                 sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache:/root/.cache aquasec/trivy:latest image --severity CRITICAL wanderlust-frontend:latest'
+            }
+        }
+
+        stage('🚀 Local Deployment') {
+            steps {
+                echo 'Deploying verified application stack via Docker Compose...'
+                // Tear down any existing instances and stand up the newly built, network-isolated containers
+                sh 'docker compose down'
+                sh 'docker compose up -d --build'
+                echo 'Application is live and running on production ports!'
             }
         }
     }
