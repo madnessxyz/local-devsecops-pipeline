@@ -15,10 +15,10 @@ services:
     container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile_optimized # <-- Forces the optimized security file
+      dockerfile: Dockerfile_optimized
     environment:
       - MONGODB_URI=mongodb://mongo:27017/wanderlust
-      - CORS_ORIGIN=http://192.168.1.173:5173 # <-- Updated to match your host server IP
+      - CORS_ORIGIN=http://192.168.1.173:5173
     ports:
       - "5000:5000"
     depends_on:
@@ -30,11 +30,13 @@ services:
     container_name: frontend
     build:
       context: ./frontend
-      dockerfile: Dockerfile_optimized # <-- Forces the optimized security file
+      dockerfile: Dockerfile_optimized
+      args:
+        - VITE_API_PATH=http://192.168.1.173:5000/api
     environment:
-      - VITE_API_PATH=http://192.168.1.173:5000/api # <-- Updated to match your host server IP
+      - VITE_API_PATH=http://192.168.1.173:5000/api
     ports:
-      - "5173:80"
+      - "5173:80"  # Exposes internal Nginx port 80 to external host port 5173
     networks:
       - app_network
 
@@ -44,3 +46,4 @@ networks:
 
 volumes:
   data:
+    driver: local
